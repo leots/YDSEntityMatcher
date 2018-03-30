@@ -5,27 +5,24 @@
  */
 package gr.demokritos.iit.skel.yds.ydsmatcher;
 
-import BlockBuilding.IBlockBuilding;
-import BlockBuilding.StandardBlocking;
-import BlockProcessing.BlockRefinement.SizeBasedBlockPurging;
-import BlockProcessing.ComparisonRefinement.WeightedEdgePruning;
-import BlockProcessing.IBlockProcessing;
-import DataModel.AbstractBlock;
-import DataModel.Attribute;
-import DataModel.EntityProfile;
-import DataModel.EquivalenceCluster;
-import DataModel.SimilarityPairs;
-import DataReader.EntityReader.EntityCSVReader;
-import EntityClustering.IEntityClustering;
-import EntityClustering.RicochetSRClustering;
-import EntityMatching.ProfileMatcher;
-import Utilities.Enumerations.RepresentationModel;
-import Utilities.Enumerations.SimilarityMetric;
+import gnu.trove.iterator.TIntIterator;
+import gnu.trove.list.TIntList;
+import org.scify.jedai.blockbuilding.IBlockBuilding;
+import org.scify.jedai.blockbuilding.StandardBlocking;
+import org.scify.jedai.blockprocessing.IBlockProcessing;
+import org.scify.jedai.blockprocessing.blockcleaning.SizeBasedBlockPurging;
+import org.scify.jedai.blockprocessing.comparisoncleaning.WeightedEdgePruning;
+import org.scify.jedai.datamodel.*;
+import org.scify.jedai.datareader.entityreader.EntityCSVReader;
+import org.scify.jedai.entityclustering.IEntityClustering;
+import org.scify.jedai.entityclustering.RicochetSRClustering;
+import org.scify.jedai.entitymatching.ProfileMatcher;
+import org.scify.jedai.utilities.enumerations.RepresentationModel;
+import org.scify.jedai.utilities.enumerations.SimilarityMetric;
+
 import java.util.List;
-import java.util.ListIterator;
 
 /**
- *
  * @author ggianna
  */
 public class YDSMatcher {
@@ -73,11 +70,11 @@ public class YDSMatcher {
         // For every cluster
         for (EquivalenceCluster ecCur : lClusters) {
             System.out.println("--- Cluster " + ecCur.toString() + " :");
-            List<Integer> liFirst = ecCur.getEntityIdsD1();
+            TIntList liFirst = ecCur.getEntityIdsD1();
 
             // Second list not applicable in "dirty list" scenario
             // Using only first list
-            ListIterator<Integer> li1 = liFirst.listIterator();
+            TIntIterator li1 = liFirst.iterator();
 
             // For each entity in cluster (only 
             while (li1.hasNext()) {
