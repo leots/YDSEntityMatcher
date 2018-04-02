@@ -21,6 +21,9 @@ import org.scify.jedai.utilities.enumerations.RepresentationModel;
 import org.scify.jedai.utilities.enumerations.SimilarityMetric;
 
 import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author ggianna
@@ -37,10 +40,20 @@ public class YDSMatcher {
                     + " due to command line limit argument...");
         }
 
+        double dThreshold = 0.8;
+        if (args.length > 1) {
+            dThreshold = Double.valueOf(args[1]);
+            System.err.println(
+                    String.format("INFO: Set threshold to %6.4f.", dThreshold));
+        }
+
         // Read entities
-        EntityCSVReader ecrReader = new EntityCSVReader("./Data/YDS TED big sellers to match - companies to match.csv");
+        EntityCSVReader ecrReader =
+                new EntityCSVReader("./Data/YDS TED big sellers to match - companies to match.csv");
         ecrReader.setAttributeNamesInFirstRow(true);
-        List<EntityProfile> lpEntities = ecrReader.getEntityProfiles().subList(0, iMaxListSize);
+        ecrReader.setAttributesToExclude(new int[]{0, 3, 4, 5}); // Ignore seller, contracts, amount, buyers
+        List<EntityProfile> lpEntities = ecrReader.getEntityProfiles();
+        lpEntities = lpEntities.subList(0, Math.min(iMaxListSize, lpEntities.size()));
 
         // TODO: Cache results
         boolean bCacheOK = false;
@@ -69,14 +82,24 @@ public class YDSMatcher {
         // Show clusters
         // For every cluster
         for (EquivalenceCluster ecCur : lClusters) {
-            System.out.println("--- Cluster " + ecCur.toString() + " :");
+            // If empty, warn and continue with next
+            if (ecCur.getEntityIdsD1().isEmpty()) {
+                // System.err.println("WARNING: Empty cluster. Igonring...");
+                continue;
+            }
+
+            // New cluster
+            System.err.println("--- Cluster " + ecCur.toString() + " :");
+            StringBuffer sbCluster = new StringBuffer();
+
             TIntList liFirst = ecCur.getEntityIdsD1();
 
             // Second list not applicable in "dirty list" scenario
             // Using only first list
             TIntIterator li1 = liFirst.iterator();
+            EntityProfile eCur = null;
 
-            // For each entity in cluster (only 
+            // For each entity in cluster (only
             while (li1.hasNext()) {
                 // get index
                 int i1 = li1.next();
@@ -85,20 +108,50 @@ public class YDSMatcher {
                 EntityProfile ep1 = lpEntities.get(i1);
 
                 // Output profiles
-                System.out.println(entityProfileToString(ep1));
+                System.err.println(String.format("Entity Line: %d --- Info: \n%s",
+                        i1 + 1, entityProfileToString(ep1)));
+
+                // Show line as 1-index based + 1 (for header line)
+                sbCluster.append(i1 + 2).append(",");
+                eCur = ep1; // Keep last info
             }
+            // Omit last coma
+            String sClusterIndices = sbCluster.toString().substring(0, sbCluster.toString().length() - 1);
+            System.out.println("{" + entityProfileToString(eCur) + " \"lines\":[" + sClusterIndices + "]},");
         }
+        // End JSON-like output
+        System.out.println("]");
 
     }
 
     public static String entityProfileToString(EntityProfile epToRender) {
         StringBuffer sb = new StringBuffer();
 
-        for (Attribute aCur : epToRender.getAttributes()) {
-            sb.append("\t").append(aCur.getName()).append("=");
-            sb.append(aCur.getValue()).append("\n");
+        for (Attribute aCur : attributeSetToSortableAttributeSet(epToRender.getAttributes())) {
+            sb.append("\"").append(aCur.getName()).append("\":\"");
+            sb.append(aCur.getValue()).append("\",\n");
         }
 
         return sb.toString();
+    }
+
+    protected static SortedSet<Attribute> attributeSetToSortableAttributeSet(Set<Attribute> toSort) {
+        SortedSet<Attribute> sRes = new TreeSet<>();
+        for (Attribute aCur : toSort)
+            sRes.add(new SortableAttribute(aCur));
+
+        return sRes;
+    }
+
+    protected static class SortableAttribute extends Attribute implements Comparable<Attribute> {
+
+        public SortableAttribute(Attribute a) {
+            super(a.getName(), a.getValue());
+        }
+
+        public int compareTo(Attribute t) {
+            return getName().compareTo(t.getName());
+        }
+
     }
 }
