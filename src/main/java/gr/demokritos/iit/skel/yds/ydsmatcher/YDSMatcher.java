@@ -20,6 +20,9 @@ import org.scify.jedai.entitymatching.ProfileMatcher;
 import org.scify.jedai.utilities.enumerations.RepresentationModel;
 import org.scify.jedai.utilities.enumerations.SimilarityMetric;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
@@ -30,7 +33,7 @@ import java.util.TreeSet;
  */
 public class YDSMatcher {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 
         // Maximum list length parameter
         int iMaxListSize = Integer.MAX_VALUE;
@@ -54,6 +57,9 @@ public class YDSMatcher {
         ecrReader.setAttributesToExclude(new int[]{0, 3, 4, 5}); // Ignore seller, contracts, amount, buyers
         List<EntityProfile> lpEntities = ecrReader.getEntityProfiles();
         lpEntities = lpEntities.subList(0, Math.min(iMaxListSize, lpEntities.size()));
+
+        // Open file to write JSON result to
+        BufferedWriter writer = new BufferedWriter(new FileWriter("out.json", false));
 
         // TODO: Cache results
         boolean bCacheOK = false;
@@ -79,12 +85,19 @@ public class YDSMatcher {
         IEntityClustering ie = new RicochetSRClustering();
         List<EquivalenceCluster> lClusters = ie.getDuplicates(lspPairs);
 
+        // Start JSON-like output
+        System.out.println("[");
+        writer.write("[");
+
         // Show clusters
         // For every cluster
+        int counter = 0;
         for (EquivalenceCluster ecCur : lClusters) {
+            counter++;
+
             // If empty, warn and continue with next
             if (ecCur.getEntityIdsD1().isEmpty()) {
-                // System.err.println("WARNING: Empty cluster. Igonring...");
+                // System.err.println("WARNING: Empty cluster. Ignoring...");
                 continue;
             }
 
@@ -117,11 +130,20 @@ public class YDSMatcher {
             }
             // Omit last coma
             String sClusterIndices = sbCluster.toString().substring(0, sbCluster.toString().length() - 1);
-            System.out.println("{" + entityProfileToString(eCur) + " \"lines\":[" + sClusterIndices + "]},");
+            String outputLine = "\n{" + entityProfileToString(eCur) + " \"lines\":[" + sClusterIndices + "]}";
+            if (counter < lClusters.size() - 1) {
+                //todo: doesn't work...
+                outputLine += ",";
+            }
+            System.out.println(outputLine);
+            writer.write(outputLine);
+//            System.out.println("" + counter + " / " + lClusters.size());
         }
         // End JSON-like output
         System.out.println("]");
+        writer.write("]");
 
+        writer.close();
     }
 
     public static String entityProfileToString(EntityProfile epToRender) {
