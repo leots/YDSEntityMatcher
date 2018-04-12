@@ -146,10 +146,16 @@ public class YDSMatcher {
                 continue;
             }
 
-            //todo: Add cluster indices
-            namesToLines.put(companyName, new ArrayList<>());
-            break;
+            // Get cluster indices
+            List<Integer> clusterIndices = new ArrayList<>();
+            for (String s : sClusterIndices.split(",")) {
+                clusterIndices.add(Integer.parseInt(s));
+            }
+
+            // Add the indices to the map
+            namesToLines.put(companyName, clusterIndices);
         }
+
         // End JSON-like output
         System.out.println("]");
         writer.write("]");
