@@ -23,10 +23,7 @@ import org.scify.jedai.utilities.enumerations.SimilarityMetric;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * @author ggianna
@@ -60,6 +57,9 @@ public class YDSMatcher {
 
         // Open file to write JSON result to
         BufferedWriter writer = new BufferedWriter(new FileWriter("out.json", false));
+
+        // Create map that will contain company name -> line mappings (same as the exported JSON file)
+        Map<String, List<Integer>> namesToLines = new HashMap<>();
 
         // TODO: Cache results
         boolean bCacheOK = false;
@@ -138,6 +138,17 @@ public class YDSMatcher {
             System.out.println(outputLine);
             writer.write(outputLine);
 //            System.out.println("" + counter + " / " + lClusters.size());
+
+            // Add to namesToLines map
+            String companyName = getAttributeValue(eCur.getAttributes(), "company name");
+            if (companyName == null) {
+                // This shouldn't happen...
+                continue;
+            }
+
+            //todo: Add cluster indices
+            namesToLines.put(companyName, new ArrayList<>());
+            break;
         }
         // End JSON-like output
         System.out.println("]");
@@ -155,6 +166,18 @@ public class YDSMatcher {
         }
 
         return sb.toString();
+    }
+
+    protected static String getAttributeValue(Set<Attribute> attrs, String attrName) {
+        String attrValue = null;
+        // Find company name
+        for (Attribute a : attrs) {
+            if (a.getName().equals(attrName)) {
+                attrValue = a.getValue();
+            }
+        }
+
+        return attrValue;
     }
 
     protected static SortedSet<Attribute> attributeSetToSortableAttributeSet(Set<Attribute> toSort) {
