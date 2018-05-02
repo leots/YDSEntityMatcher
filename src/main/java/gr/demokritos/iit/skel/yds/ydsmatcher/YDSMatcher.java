@@ -89,9 +89,12 @@ public class YDSMatcher {
         System.out.println("[");
         writer.write("[");
 
+        // Variables for adding comma between JSON array items
+        boolean firstRow = true;
+        int counter = 0;
+
         // Show clusters
         // For every cluster
-        int counter = 0;
         for (EquivalenceCluster ecCur : lClusters) {
             counter++;
 
@@ -128,16 +131,21 @@ public class YDSMatcher {
                 sbCluster.append(i1 + 2).append(",");
                 eCur = ep1; // Keep last info
             }
-            // Omit last coma
-            String sClusterIndices = sbCluster.toString().substring(0, sbCluster.toString().length() - 1);
-            String outputLine = "\n{" + entityProfileToString(eCur) + " \"lines\":[" + sClusterIndices + "]}";
-            if (counter < lClusters.size() - 1) {
-                //todo: doesn't work...
+
+            // Start creating output JSON line, adding comma between json array items (not before first/after last)
+            String outputLine = "";
+            if (!firstRow && counter < lClusters.size() - 1) {
                 outputLine += ",";
             }
+            firstRow = false;
+
+            // Create actual JSON array item data
+            String sClusterIndices = sbCluster.toString().substring(0, sbCluster.toString().length() - 1);
+            outputLine += "\n{" + entityProfileToString(eCur) + " \"lines\":[" + sClusterIndices + "]}";
+
+            // Write the JSON array item to file
             System.out.println(outputLine);
             writer.write(outputLine);
-//            System.out.println("" + counter + " / " + lClusters.size());
 
             // Add to namesToLines map
             String companyName = getAttributeValue(eCur.getAttributes(), "company name");
@@ -158,7 +166,7 @@ public class YDSMatcher {
 
         // End JSON-like output
         System.out.println("]");
-        writer.write("]");
+        writer.write("\n]\n");
 
         writer.close();
     }
