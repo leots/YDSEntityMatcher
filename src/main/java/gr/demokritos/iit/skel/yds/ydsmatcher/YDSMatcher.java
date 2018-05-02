@@ -176,19 +176,39 @@ public class YDSMatcher {
 
         writer.close();
 
-        // Read gold standard CSV file
+        // Read gold standard CSV file to create ground truth
         System.out.println(namesToLines);
         Reader reader = Files.newBufferedReader(Paths.get(goldStandardFile));
         CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();    // Skip header
-
         List<String[]> records = csvReader.readAll();
+
+        // Create map of cluster ids -> names (ground truth)
+        Map<Integer, List<String>> goldNamesPerCluster = new HashMap<>();
+
         for (String[] record : records) {
-//            System.out.println("ID : " + record[0]);
-            System.out.println("Company name : " + record[1]);
-            System.out.println("Cluster ID : " + record[2]);
-            System.out.println("Country : " + record[3]);
-            System.out.println("---------------------------");
+            // todo: should we use company ID for ground truth?
+//            String companyId = record[0];
+            String companyName = record[1];
+            Integer companyCluster = Integer.parseInt(record[2]);
+            String companyCountry = record[3];
+            System.out.println("Company name : " + companyName + "\nCluster ID : " + companyCluster
+                    + "\nCountry : " + companyCountry + "\n---------------------------");
+
+            // Create array list for company names if it doesn't exist
+            if (!goldNamesPerCluster.containsKey(companyCluster)) {
+                goldNamesPerCluster.put(companyCluster, new ArrayList<>());
+            }
+
+            // Add the company name to the cluster
+            goldNamesPerCluster.get(companyCluster).add(companyName);
         }
+//        System.out.println(goldNamesPerCluster);
+
+        //todo: map gold standard names to IDs (if needed)
+        Map<String, List<String>> goldNamesToIds = new HashMap<>();
+//        System.out.println("=> Name exists. JedAI found lines:" + namesToLines.get(companyName));
+
+        //todo: for each gold standard name, find how many correct names jedai found
     }
 
     public static String entityProfileToString(EntityProfile epToRender) {
