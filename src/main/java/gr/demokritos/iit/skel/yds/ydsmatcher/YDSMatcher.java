@@ -5,6 +5,8 @@
  */
 package gr.demokritos.iit.skel.yds.ydsmatcher;
 
+import com.opencsv.CSVReader;
+import com.opencsv.CSVReaderBuilder;
 import gnu.trove.iterator.TIntIterator;
 import gnu.trove.list.TIntList;
 import org.scify.jedai.blockbuilding.IBlockBuilding;
@@ -23,12 +25,16 @@ import org.scify.jedai.utilities.enumerations.SimilarityMetric;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 /**
  * @author ggianna
  */
 public class YDSMatcher {
+    final static String goldStandardFile = "./Data/YDS TED big sellers to match - new gold standard.csv";
 
     public static void main(String[] args) throws IOException {
 
@@ -169,6 +175,20 @@ public class YDSMatcher {
         writer.write("\n]\n");
 
         writer.close();
+
+        // Read gold standard CSV file
+        System.out.println(namesToLines);
+        Reader reader = Files.newBufferedReader(Paths.get(goldStandardFile));
+        CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();    // Skip header
+
+        List<String[]> records = csvReader.readAll();
+        for (String[] record : records) {
+//            System.out.println("ID : " + record[0]);
+            System.out.println("Company name : " + record[1]);
+            System.out.println("Cluster ID : " + record[2]);
+            System.out.println("Country : " + record[3]);
+            System.out.println("---------------------------");
+        }
     }
 
     public static String entityProfileToString(EntityProfile epToRender) {
