@@ -35,6 +35,7 @@ import java.util.*;
  */
 public class YDSMatcher {
     final static String goldStandardFile = "./Data/YDS TED big sellers to match - new gold standard.csv";
+    final static String companiesToMatch = "./Data/YDS TED big sellers to match - companies to match.csv";
 
     public static void main(String[] args) throws IOException {
 
@@ -54,8 +55,7 @@ public class YDSMatcher {
         }
 
         // Read entities
-        EntityCSVReader ecrReader =
-                new EntityCSVReader("./Data/YDS TED big sellers to match - companies to match.csv");
+        EntityCSVReader ecrReader = new EntityCSVReader(companiesToMatch);
         ecrReader.setAttributeNamesInFirstRow(true);
         ecrReader.setAttributesToExclude(new int[]{0, 3, 4, 5}); // Ignore seller, contracts, amount, buyers
         List<EntityProfile> lpEntities = ecrReader.getEntityProfiles();
@@ -121,7 +121,7 @@ public class YDSMatcher {
             TIntIterator li1 = liFirst.iterator();
             EntityProfile eCur = null;
 
-            // For each entity in cluster (only
+            // For each entity in cluster
             while (li1.hasNext()) {
                 // get index
                 int i1 = li1.next();
@@ -178,15 +178,12 @@ public class YDSMatcher {
 
         // Read gold standard CSV file to create ground truth
         System.out.println(namesToLines);
-        Reader reader = Files.newBufferedReader(Paths.get(goldStandardFile));
-        CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(1).build();    // Skip header
-        List<String[]> records = csvReader.readAll();
+        List<String[]> records = readCsv(goldStandardFile, 1);  // Skip header
 
         // Create map of cluster ids -> names (ground truth)
         Map<Integer, List<String>> goldNamesPerCluster = new HashMap<>();
 
         for (String[] record : records) {
-            // todo: should we use company ID for ground truth?
 //            String companyId = record[0];
             String companyName = record[1];
             Integer companyCluster = Integer.parseInt(record[2]);
@@ -202,13 +199,24 @@ public class YDSMatcher {
             // Add the company name to the cluster
             goldNamesPerCluster.get(companyCluster).add(companyName);
         }
-//        System.out.println(goldNamesPerCluster);
+        System.out.println(goldNamesPerCluster);
 
-        //todo: map gold standard names to IDs (if needed)
-        Map<String, List<String>> goldNamesToIds = new HashMap<>();
-//        System.out.println("=> Name exists. JedAI found lines:" + namesToLines.get(companyName));
+        // Read input CSV and map line numbers to the company names from the CSV
+        records = readCsv(companiesToMatch, 1); // Skip header ???
+        List<String> companyNames = new ArrayList<>();
+        for (String[] record : records) {
+            companyNames.add(record[1]);
+        }
 
-        //todo: for each gold standard name, find how many correct names jedai found
+        // todo: For each ground truth cluster, find the JedAI output cluster with the highest % of common elements with it
+        System.out.println(namesToLines);
+        // (the names from the lines can be found using the companyNames list!)
+    }
+
+    private static List<String[]> readCsv(String filePath, int skipLines) throws IOException {
+        Reader reader = Files.newBufferedReader(Paths.get(filePath));
+        CSVReader csvReader = new CSVReaderBuilder(reader).withSkipLines(skipLines).build();
+        return csvReader.readAll();
     }
 
     public static String entityProfileToString(EntityProfile epToRender) {
